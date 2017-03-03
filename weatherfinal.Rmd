@@ -1,0 +1,80 @@
+---
+title: "Untitled"
+author: "Sean Pollock"
+date: "March 3, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(dtplyr)
+stormdata <- read.csv("repdata%2Fdata%2FStormData.csv.bz2")
+```
+
+```{r}
+#need to do a check for na values later
+colnames(stormdata) <- tolower(names(stormdata))
+colnames(stormdata)[1] <- "stateid"
+colnames(stormdata) <- gsub("_","", names(stormdata))
+stormdata$evtype <- as.factor(stormdata$evtype)
+
+```
+
+```{r}
+for (i in 1:nrow(stormdata)) {
+        if (stormdata$propdmgexp[i] == "K" |stormdata$propdmgexp[i]== "k"){
+                stormdata$propdmg[i] <- stormdata$propdmg[i]*1E3
+        } else if (stormdata$propdmgexp[i] == "M" | stormdata$propdmgexp[i]== "m"){
+                stormdata$propdmg[i] <- stormdata$propdmg[i]*1E6
+        } else if (stormdata$propdmgexp[i] == "B]" | stormdata$propdmgexp[i]== "b") {
+                stormdata$propdmg[i] <- stormdata$propdmg[i]*1E7
+        }
+
+        if (stormdata$cropdmgexp[i]  == "K" | stormdata$cropdmgexp[i]== "k"){
+                stormdata$cropdmg[i] <- stormdata$cropdmg[i]*1E3
+        } else if (stormdata$cropdmgexp[i]  == "M" | stormdata$cropdmgexp[i]== "m"){
+                stormdata$cropdmg[i] <- stormdata$cropdmg[i]*1E6
+        } else if (stormdata$cropdmgexp[i]  == "B" | stormdata$cropdmgexp[i]== "b") {
+                stormdata$cropdmg[i] <- stormdata$cropdmg[i]*1E7
+        }
+}
+```
+
+```{r}
+#aggregate event type by mean prop dmg caused
+meanpropdmg <- aggregate(propdmg ~ evtype, stormdata, mean)
+meancropdmg <- aggregate(cropdmg ~evtype, stormdata, mean)
+totalcosts <- merge(meanpropdmg, meancropdmg, by="evtype")
+totalcosts <- mutate(totalcosts, total = (propdmg + cropdmg)/1E6) %>%
+        arrange(desc(total), desc(propdmg), desc(cropdmg))
+
+```
+
+```{r}
+meanfatal <- aggregate(fatalities~ evtype, stormdata, mean)
+meaninj <- aggregate(injuries ~evtype, stormdata, mean)
+totcasualties <- merge(meanfatal, meaninj, by="evtype")
+totcasualties <- mutate(totcasualties, casualties = fatalities + injuries) %>%
+        arrange(desc(casualties), desc(fatalities), desc(injuries))
+```
+
+```{r}
+barplot(totcasualties$casualties[1:10], names = totcasualties$evtype[1:10], col="blue")
+barplot(totcasualties$fatalities[1:10], names = totcasualties$evtype[1:10], add =T)
+legend("topright", legend = c("Fatalities", "Injuries"), fill=c( "gray", "blue"))
+title(main = "Top Ten Storm Types by Average Casualties", xlab = "Storm Type", ylab= "Casualties")
+```
+
+barplot(totalcosts$total, names = totalcosts$evtype.)
+
+```{r}
+barplot(totalcosts$total[1:10], names = totalcosts$evtype[1:10], col="blue")
+barplot(totalcosts$propdmg[1:10], names = totalcosts$evtype[1:10], add =T)
+legend("topright", legend = c("Property Damage", "Crop Damage"), fill=c( "gray", "blue"))
+title(main = "Top Ten Storm Types by Average Economic Damage", xlab = "Storm Type", ylab= "Economic Damage")
+```

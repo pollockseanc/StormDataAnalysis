@@ -1,0 +1,205 @@
+---
+title: "Untitled"
+author: "Sean Pollock"
+date: "March 2, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(dtplyr)
+```
+
+
+```{r}
+stormdata <- read.csv("repdata%2Fdata%2FStormData.csv.bz2")
+
+```
+
+
+```{r}
+#need to do a check for na values later
+colnames(stormdata) <- tolower(names(stormdata))
+colnames(stormdata)[1] <- "stateid"
+colnames(stormdata) <- gsub("_","", names(stormdata))
+
+```
+
+
+
+
+```{r}
+td1<- stormdata[1:100,]
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+td1$evtype <- as.factor(td1$evtype)
+
+```
+
+
+```{r}
+for (i in 1:nrow(td1)) {
+if (td1$propdmgexp[i] == "K" |td1$propdmgexp[i]== "k"){
+        td1$propdmg[i] <- td1$propdmg[i]*1E3
+} else if (td1$propdmgexp[i] == "M" | td1$propdmgexp[i]== "m"){
+        td1$propdmg[i] <- td1$propdmg[i]*1E6
+} else if (td1$propdmgexp[i] == "B]" | td1$propdmgexp[i]== "b") {
+        td1$propdmg[i] <- td1$propdmg[i]*1E7
+}
+
+if (td1$cropdmgexp[i]  == "K" | td1$cropdmgexp[i]== "k"){
+        td1$cropdmg[i] <- td1$cropdmg[i]*1E3
+} else if (td1$cropdmgexp[i]  == "M" | td1$cropdmgexp[i]== "m"){
+        td1$cropdmg[i] <- td1$cropdmg[i]*1E6
+} else if (td1$cropdmgexp[i]  == "B" | td1$cropdmgexp[i]== "b") {
+        td1$cropdmg[i] <- td1$cropdmg[i]*1E7
+}
+}
+```
+
+
+```{r}
+stormdata$totalcosts <- stormdata$cropdmg + stormdata$propdmg
+```
+
+
+```{r}
+#aggregate event type by mean prop dmg caused
+meanpropdmg <- aggregate(propdmg ~ evtype, td1, mean)
+meancropdmg <- aggregate(cropdmg ~evtype, td1, mean)
+totalcosts <- merge(meanpropdmg, meancropdmg, by="evtype")
+totalcosts <- mutate(totalcosts, total = (propdmg + cropdmg)/1E6) %>%
+        arrange(desc(total), desc(propdmg), desc(cropdmg))
+
+```
+
+```{r}
+barplot(totalcosts$total, names = totalcosts$evtype.)
+
+```
+
+
+
+```{r}
+ggplot(totalcosts) +
+         geom_col(aes(evtype, total)) +
+         labs(title  = "Total Economic Damage by Event Type", x = "Event Type", y = "Total Damage")
+```
+
+
+```{r}
+meanfatal <- aggregate(fatalities~ evtype, td1, mean)
+meaninj <- aggregate(injuries ~evtype, td1, mean)
+merged <- merge(meanfatal, meaninj, by="evtype")
+```
+
+```{r}
+merged <- mutate(merged, casualties = fatalities + injuries) %>%
+        arrange(desc(casualties), desc(fatalities), desc(injuries))
+        
+```
+
+
+```{r}
+merged <- merged[order(merged$casualties, merged$fatalities, merged$injuries)]
+        
+```
+
+```{r}
+#https://blog.rstudio.org/2016/11/14/ggplot2-2-2-0/
+ggplot(merged, ) +
+        geom_col(aes(x=evtype, y=casualties), show.legend=T) +
+        geom_col(aes(x=evtype, y=fatalities, fill = "blue" )) +
+        labs(title  = "Casualties by Event Type", x = "Event Type", y = "Casualties") +
+        #scale_fill_manual(name = "asd")
+        theme(lengend.box = "horizontal")
+       
+```
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+ggplot(merged, ) +
+        geom_col(aes(x=evtype, y=casualties, fill = "green"), show.legend= T) +
+        
+        geom_col(aes(x=evtype, y=fatalities ), position ="stack") +
+        labs(title  = "Casualties by Event Type", x = "Event Type", y = "Casualties") 
+     
+                
+```
+
+
+
+```{r}
+barplot(merged$casualties[1:2], names = merged$evtype[1:2], col="blue")
+barplot(merged$fatalities[1:2], names = merged$evtype[1:2], add =T)
+legend("topright", legend = c("Fatalities", "Injuries"), fill=c( "gray", "blue"))
+title(main = "Top Ten Storm Types by Average Casualties", xlab = "Storm Type", ylab= "Casualties")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
