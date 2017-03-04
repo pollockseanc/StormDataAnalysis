@@ -1,4 +1,4 @@
----
++---
 title: "Untitled"
 author: "Sean Pollock"
 date: "March 2, 2017"
@@ -21,8 +21,11 @@ stormdata <- read.csv("repdata%2Fdata%2FStormData.csv.bz2")
 
 ```{r}
 #need to do a check for na values later
+
 colnames(stormdata) <- tolower(names(stormdata))
 colnames(stormdata)[1] <- "stateid"
+colnames(stormdata)[34] <- "elatitide"
+colnames(stormdata)[35] <- "elongitude"
 colnames(stormdata) <- gsub("_","", names(stormdata))
 
 ```
@@ -77,7 +80,7 @@ stormdata$totalcosts <- stormdata$cropdmg + stormdata$propdmg
 meanpropdmg <- aggregate(propdmg ~ evtype, td1, mean)
 meancropdmg <- aggregate(cropdmg ~evtype, td1, mean)
 totalcosts <- merge(meanpropdmg, meancropdmg, by="evtype")
-totalcosts <- mutate(totalcosts, total = (propdmg + cropdmg)/1E6) %>%
+totalcosts <- mutate(totalcosts, total = propdmg + cropdmg) %>%
         arrange(desc(total), desc(propdmg), desc(cropdmg))
 
 ```
@@ -153,7 +156,9 @@ title(main = "Top Ten Storm Types by Average Casualties", xlab = "Storm Type", y
 ```
 
 ```{r}
-
+testprop <- aggregate( (propdmg > 250) ~ evtype, td1, function(x) mean(x >= 250))
+head(meanpropdmg)
+head(testprop)
 ```
 
 ```{r}
@@ -161,7 +166,11 @@ title(main = "Top Ten Storm Types by Average Casualties", xlab = "Storm Type", y
 ```
 
 ```{r}
+td2 <- stormdata[1:500, ]
+```
 
+```{r}
+tapply(td2$PROPDMG, td2$PROPDMGEXP == "K", fun=td2$PROPDMG*1E3, simplify = f )
 ```
 
 ```{r}
@@ -169,27 +178,41 @@ title(main = "Top Ten Storm Types by Average Casualties", xlab = "Storm Type", y
 ```
 
 ```{r}
+kpi <- grep("[Kk]", stormdata$propdmgexp)
+stormdata$propdmg[kpi] <- stormdata$propdmg[kpi] *1E3
+mpi <- grep("[Mm]", stormdata$propdmgexp)
+stormdata$propdmg[mpi] <- stormdata$propdmg[mpi] *1E6
+bpi <- grep("[Bb]", stormdata$propdmgexp)
+stormdata$propdmg[bpi] <- stormdata$propdmg[bpi] *1E9
+kci <- grep("[Kk]", stormdata$cropdmgexp)
+stormdata$cropdmg[kci] <- stormdata$cropdmg[kci] *1E4
+mci <- grep("[Mm]", stormdata$cropdmgexp)
+stormdata$cropdmg[mci] <- stormdata$cropdmg[mci] *1E6
+bci <- grep("[Bb]", stormdata$cropdmgexp)
+stormdata$cropdmg[bci] <- stormdata$cropdmg[bci]* 1E9
+```
+
+```{r}
+totalcost <- stormdata %>%
+        select(evtype, propdmg, cropdmg) %>%
+        group_by(evtype) %>%
+        summarize(meanpropdmg = mean(propdmg),
+                  meancropdmg = mean(cropdmg),
+                  total = meanpropdmg+meancropdmg) %>%
+ arrange(desc(total), desc(meanpropdmg), desc(meancropdmg))
+```
+
+```{r}
+table(stormdata$propdmgexp)
+```
+
+```{r}
+table(stormdata$cropdmgexp)
 
 ```
 
 ```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
+head(totalcost)
 ```
 
 ```{r}
