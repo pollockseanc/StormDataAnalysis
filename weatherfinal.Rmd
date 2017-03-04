@@ -1,13 +1,11 @@
 ---
-title: "Untitled"
-author: "Sean Pollock"
 date: "March 3, 2017"
 output: html_document
 ---
 
 ##Top Event Types by Casualties and Monetary Damage since November 01, 1991
 ###Synopsis
-In this report we aim to find which are the most dangerous and damaging event types by analyzing the storm data provided byt he NOAA's storm database. We look at the last 20 years of the data provided. This time frame was chosen to provide as data that is recent, in order to provide data that is more relevant to today. Data is looked at as sums rather than means in order to see what is the most damaging in aggregate rather than most threatening on average. 
+In this report we aim to find which are the most dangerous and damaging event types by analyzing the storm data provided byt he NOAA's storm database. We look at the last 20 years of the data provided. This time frame was chosen to provide as data that is recent, in order to provide data that is more relevant to today. Data is looked at as sums rather than means in order to see what is the most damaging in aggregate rather than most threatening on average. We find that tornados have caused the most casualties and floods have caused the most monetary damage.
 
 ##Data processing
 Initially the program checks to see if the data file for the storms already exists, if it does not the data is downloaded from the link provided by the course. This file is then read in as a .csv file and assigned to a dataframe called stormdata.  
@@ -27,17 +25,91 @@ stormdata <- read.csv("repdata%2Fdata%2FStormData.csv.bz2")
 
 Only the aspects of the data that are necessary for this analysis are transformed. For ease of use, variable names are made lowercase and any underscores in the data are removed. During this process a number of variables are renamed to be the same. Those variables are reassigned descriptive names. To reduce coding errors and increase ease of use, event types, the dollar units are made lowercase. Event type is made into a factor and the beginning date is formatted as a date type.
 ```{r}
-#need to do a check for na values later
+
 colnames(stormdata) <- tolower(names(stormdata))
 colnames(stormdata)[1] <- "stateid"
 colnames(stormdata) <- gsub("_","", names(stormdata))
-stormdata$evtype <- tolower(stormdata$evtype)
+
 colnames(stormdata)[34] <- "endlatitide"
 colnames(stormdata)[35] <- "endlongitude"
 stormdata$propdmgexp <- tolower(stormdata$propdmgexp)
 stormdata$cropdmgexp <- tolower(stormdata$cropdmgexp)
-stormdata$evtype <- as.factor(stormdata$evtype)
+
+
 stormdata$bgndate <- as.Date(stormdata$bgndate, "%m/%d/%Y") 
+```
+
+Numerous events are entered in similar but different ways. This section aggregates many of those items. Event names are corrected to 2.1 Permitted Storm Data Events from this file: 
+https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
+
+This reduces the factor count from 985 437. First everything is made lowercase, and then non alphabetical characters are replaced with spaces. 
+```{r}
+stormdata$evtype <- tolower(stormdata$evtype)
+stormdata$evtype <- gsub("-"," ", stormdata$evtype)
+stormdata$evtype <- gsub("/"," ", stormdata$evtype)
+stormdata$evtype <- gsub("_"," ", stormdata$evtype)
+stormdata$evtype <- gsub(";"," ", stormdata$evtype)
+mhail <- grep("marine hail", stormdata$evtype)
+mhw <- grep("marine highwind", stormdata$evtype)
+msw <- grep("marine strong wind", stormdata$evtype)
+mtstm <- grep("marine thunderstorm wind|marine tstm wind", stormdata$evtype)
+hurrind <- grep("hurricane|typhoon", stormdata$evtype)
+stormdata$evtype[hurrind] <- "Hurricane (Typhoon)"
+hwind <- grep("high wind", stormdata$evtype)
+stormdata$evtype[hwind] <- "High Wind"
+lightind <- grep("lightning", stormdata$evtype)
+stormdata$evtype[lightind] <- "Lightning"
+tstmyind <- grep("thunderstorm wind|tstm wind|thunderstorm", stormdata$evtype)
+stormdata$evtype[tstmyind] <- "Thunderstorm Wind"
+tropind <- grep("tropical storm|tropical depression", stormdata$evtype)
+stormdata$evtype[tropind] <- "Tropical Storm"
+sleetind <- grep("sleet", stormdata$evtype)
+stormdata$evtype[sleetind] <- "Sleet"
+swindind <- grep("strong wind", stormdata$evtype)
+stormdata$evtype[swindind] <- "Strong Wind"
+heatind <- grep("heat|record warmth|record high", stormdata$evtype)
+stormdata$evtype[heatind] <- "Heat"
+iceind <- grep("ice", stormdata$evtype )
+stormdata$evtype[iceind] <- "Ice Storm"
+frostind <- grep("frost|freeze", stormdata$evtype)
+stormdata$evtype[frostind] <- "Frost/Freeze"
+coastal <- grep("coastal flood|coastal flooding |coastal  flooding|tidal flood|tidal flooding", stormdata$evtype)
+stormdata$evtype[coastal] <- "Coastal Flood"
+blizzard <- grep("blizzard", stormdata$evtype )
+stormdata$evtype[blizzard] <- "Blizzard"
+flash <- grep("flash flood", stormdata$evtype )
+stormdata$evtype[flash] <- "Flash Flood"
+hail <- grep("hail", stormdata$evtype)
+stormdata$evtype[hail] <- "Hail"
+Waterspout <- grep("waterspout", stormdata$evtype)
+stormdata$evtype[Waterspout] <- "Waterspout"
+tornado <- grep("tornado| tornado", stormdata$evtype)
+stormdata$evtype[tornado] <- "Tornado"
+rip <- grep("rip", stormdata$evtype)
+stormdata$evtype[rip] <- "Rip Current"
+surf <- grep("high surf|heavy surf", stormdata$evtype)
+stormdata$evtype[surf] <- "High Surf"
+heavyrain <- grep("heavy rain", stormdata$evtype)
+stormdata$evtype[heavyrain] <- "Heavy Rain"
+funnel <- grep("funnel", stormdata$evtype)
+stormdata$evtype[funnel] <- "Funnel Cloud"
+heavysnow <- grep("heavy snow", stormdata$evtype)
+stormdata$evtype[heavysnow] <- "Heavy Snow"
+windchill <- grep("wind chill|extreme cold|record cold", stormdata$evtype)
+stormdata$evtype[windchill] <- "Extreme Cold/Wind Chill"
+winter <- grep("winter weather|wintry mix", stormdata$evtype)
+stormdata$evtype[winter] <- "Winter Weather"
+fire <- grep("fire|fires|wildfires|wildfire", stormdata$evtype)
+stormdata$evtype[fire] <- "Winter Weather"
+surge <- grep("storm surge", stormdata$evtype)
+stormdata$evtype[surge] <- "Storm Surge"
+urb <- grep("urban", stormdata$evtype)
+stormdata$evtype[urb] <- "flood"
+stormdata$evtype[mhail] <- "Marine Hail"
+stormdata$evtype[mhw] <- "Marine High WInd"
+stormdata$evtype[msw] <- "Marine Strong Wind"
+stormdata$evtype[mtstm] <- "Marine Thunderstorm Wind"
+stormdata$evtype <- as.factor(stormdata$evtype)
 ```
 
 In order to use the property damage and crop damage amounts to calculate the economic damage of the storm they must be made usuable. To do this we check to see if the propdmg exp is equal to either k for thousands, m for millions, or b for billions. These factors are pulled from the data documentation, any other factors are not considered as they are not defined formally. This should introduce little error, of the 465,000 rows of property damage that have a matching unit, less than 350 have unknown unit types.
@@ -85,7 +157,7 @@ totalcasualties <- stormdata %>%
 ###Results
 The top five events by casualties.
 ```{r}
-head(totalcasualties)
+head(totalcasualties, 5)
 ```
 
 The total casualties are plotted by event type and total casualties. 
@@ -108,16 +180,16 @@ totalcost <- stormdata %>%
         summarize(totalpropdmg = sum(propdmg)/1E6,
                   totalcropdmg = sum(cropdmg)/1E6,
                   total = totalpropdmg+totalcropdmg) %>%
- arrange(desc(total), desc(totalpropdmg), desc(totalcropdmg))
+        arrange(desc(total), desc(totalpropdmg), desc(totalcropdmg))
 
 ```
 
 ###Results
-The top five event types by total cost. 
+The top five event types by total cost in millions. 
 ```{r}
-head(totalcost)
+head(totalcost, 5)
 ```
-The total monetary damages are plotting by event type and total damages. 
+The total monetary damages are plotting by event type and total damages. The damages are in millions. 
 ```{r}
 
 ggplot(totalcost[1:5,]) +
